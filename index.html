@@ -199,9 +199,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .warn-box{background:var(--red-bg);border-radius:var(--rsm);padding:8px 12px;font-size:13px;color:var(--red);margin-bottom:6px;}
 .annual-table{width:100%;border-collapse:collapse;font-size:11px;}
 .annual-table th{text-align:right;padding:4px 6px;color:var(--text2);font-weight:400;border-bottom:0.5px solid var(--border);}
-.annual-table th:first-child{text-align:left;}
+.annual-table th:first-child{text-align:left;white-space:nowrap;}
 .annual-table td{text-align:right;padding:5px 6px;border-bottom:0.5px solid var(--border);}
-.annual-table td:first-child{text-align:left;font-weight:500;}
+.annual-table td:first-child{text-align:left;font-weight:500;white-space:nowrap;}
 .annual-table .total-row td{font-weight:600;border-top:0.5px solid var(--border2);color:var(--blue);}
 .month-sel{font-size:13px;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface);color:var(--text);font-family:inherit;width:auto;}
 
@@ -905,16 +905,35 @@ function renderAnnualTable(){
     vals.forEach(function(v,i){if(v&&v>0)totals[i]+=v;html+='<td>'+(!v||v===0?'-':(v/10000).toFixed(0)+'만')+'</td>';});
     html+='</tr>';
   });
-  html+='<tr class="total-row"><td>월합계</td>';
-  totals.forEach(function(t){html+='<td>'+(t===0?'-':(t/10000).toFixed(0)+'만')+'</td>';});
+  html+='<tr style="background:var(--surface2);"><td style="font-weight:600;padding:6px;">월합계</td>';
+  totals.forEach(function(t){html+='<td style="font-weight:600;color:var(--blue);padding:6px;">'+(t===0?'-':(t/10000).toFixed(0)+'만')+'</td>';});
   html+='</tr>';
   document.getElementById('annual-body').innerHTML=html;
-  var colors=['#378ADD','#1D9E75','#D85A30','#D4537E'];
   var isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   var tc=isDark?'#a0a09c':'#6b6b67';
-  var datasets=order.slice(0,4).map(function(emp,i){return{label:emp,data:(annualData.employees[emp]||Array(12).fill(0)).map(function(v){return v||0;}),backgroundColor:colors[i]+'33',borderColor:colors[i],borderWidth:1.5,fill:false,tension:0.3,pointRadius:3};});
   if(annualChart)annualChart.destroy();
-  annualChart=new Chart(document.getElementById('annualChart'),{type:'line',data:{labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},boxWidth:10,padding:8,color:tc}}},scales:{y:{ticks:{callback:function(v){return(v/10000).toFixed(0)+'만';},font:{size:10},color:tc},grid:{color:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}},x:{ticks:{font:{size:10},color:tc},grid:{display:false}}}}});
+  annualChart=new Chart(document.getElementById('annualChart'),{
+    type:'bar',
+    data:{
+      labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+      datasets:[{
+        label:'월 총 인건비',
+        data:totals,
+        backgroundColor:'#378ADD99',
+        borderColor:'#378ADD',
+        borderWidth:1.5,
+        borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10},color:tc}},
+        y:{ticks:{callback:function(v){return(v/10000).toFixed(0)+'만';},font:{size:10},color:tc},grid:{color:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}}
+      }
+    }
+  });
 }
 
 /* ── INIT ── */
