@@ -226,6 +226,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <button class="nav-tab" onclick="sw('annual-t')">테린느 연간</button>
       <button class="nav-tab" onclick="sw('labor')">인건비</button>
       <button class="nav-tab" onclick="sw('annual-l')">인건비 연간</button>
+      <button class="nav-tab" onclick="sw('roastery')">원두 원가</button>
     </div>
   </div>
 </div>
@@ -426,6 +427,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <div class="note" style="margin-top:8px;">인건비 탭에서 분석한 월만 업데이트됩니다</div>
 </div>
 
+<div class="panel" id="panel-roastery" style="display:none;"></div>
+
 </div>
 
 <script>
@@ -464,13 +467,18 @@ var chartQty=null,chartProfit=null;
 
 /* ── TAB ── */
 function sw(t){
-  var map={cost:'cost',sales:'sales','annual-t':'annual-t',labor:'labor','annual-l':'annual-l'};
-  document.querySelectorAll('.nav-tab').forEach(function(el,i){el.classList.toggle('active',['cost','sales','annual-t','labor','annual-l'][i]===t);});
-  document.querySelectorAll('.panel').forEach(function(el){el.classList.remove('active');});
-  document.getElementById('panel-'+t).classList.add('active');
+  var allTabs=['cost','sales','annual-t','labor','annual-l','roastery'];
+  document.querySelectorAll('.nav-tab').forEach(function(el,i){el.classList.toggle('active',allTabs[i]===t);});
+  document.querySelectorAll('.panel').forEach(function(el){
+    el.classList.remove('active');
+    el.style.display='none';
+  });
+  var target=document.getElementById('panel-'+t);
+  if(target){target.classList.add('active');target.style.display='block';}
   if(t==='sales')buildSalesCards();
   if(t==='annual-t')renderAnnual();
   if(t==='annual-l')renderAnnualTable();
+  if(t==='roastery')renderRoastery();
 }
 
 /* ── COST CALC ── */
@@ -917,8 +925,132 @@ function renderAnnualTable(){
   annualChart=new Chart(document.getElementById('annualChart'),{type:'line',data:{labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},boxWidth:10,padding:8,color:tc}}},scales:{y:{ticks:{callback:function(v){return(v/10000).toFixed(0)+'만';},font:{size:10},color:tc},grid:{color:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}},x:{ticks:{font:{size:10},color:tc},grid:{display:false}}}}});
 }
 
+/* ── 원두 원가 분석기 ── */
+var roasteryBeanCount=0;
+function loadRoastery(){}
+
+function renderRoastery(){
+  var panel=document.getElementById('panel-roastery');
+  panel.innerHTML='<div class="page-title">원두 원가 분석기</div><div class="page-sub">생두 정보를 입력하면 납품가까지 자동 계산됩니다</div>'+
+  '<div class="sl">원두 유형</div><div class="card"><div style="display:flex;align-items:center;gap:8px;">'+
+  '<span style="font-size:12px;color:var(--text2);min-width:80px;">블렌드 유형</span>'+
+  '<select id="r-blend" onchange="saveRoastery()" style="font-size:13px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface);color:var(--text);">'+
+  '<option>오프블렌드</option><option>온블렌드</option><option>디카페인</option><option>싱글오리진</option></select></div></div>'+
+  '<div class="sl">생두 구성</div><div class="card"><div id="r-beans"></div>'+
+  '<button onclick="rAddBean()" style="width:100%;padding:9px;border:0.5px dashed var(--border2);border-radius:var(--rsm);background:none;color:var(--text2);cursor:pointer;font-size:12px;font-family:inherit;">+ 원두 추가</button></div>'+
+  '<div class="sl">로스팅 조건</div><div class="card">'+
+  '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'+
+  '<span style="font-size:12px;color:var(--text2);min-width:80px;">투입량</span>'+
+  '<input id="r-input-g" type="number" placeholder="6000" min="0" step="100" oninput="saveRoastery()" style="width:80px;font-size:13px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface2);color:var(--text);">'+
+  '<span style="font-size:12px;color:var(--text3);">g 투입 →</span>'+
+  '<input id="r-output-g" type="number" placeholder="5000" min="0" step="100" oninput="saveRoastery()" style="width:80px;font-size:13px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface2);color:var(--text);">'+
+  '<span style="font-size:12px;color:var(--text3);">g 생산</span></div>'+
+  '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'+
+  '<span style="font-size:12px;color:var(--text2);min-width:80px;">목표 마진율</span>'+
+  '<input id="r-margin" type="number" value="50" min="0" max="99" oninput="saveRoastery()" style="width:70px;font-size:13px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface2);color:var(--text);">'+
+  '<span style="font-size:12px;color:var(--text3);">%</span></div>'+
+  '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'+
+  '<span style="font-size:12px;color:var(--text2);min-width:80px;">부가세</span>'+
+  '<select id="r-vat" onchange="saveRoastery()" style="font-size:13px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface);color:var(--text);">'+
+  '<option value="include">포함 (×1.1)</option><option value="exclude">별도</option></select></div>'+
+  '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+  '<span style="font-size:12px;color:var(--text2);min-width:80px;">포장 단위</span>'+
+  '<label style="font-size:12px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="r-pkg" value="150" onchange="saveRoastery()"> 150g</label>'+
+  '<label style="font-size:12px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="r-pkg" value="200" checked onchange="saveRoastery()"> 200g</label>'+
+  '<label style="font-size:12px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="r-pkg" value="500" checked onchange="saveRoastery()"> 500g</label>'+
+  '<label style="font-size:12px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="r-pkg" value="1000" checked onchange="saveRoastery()"> 1kg</label></div></div>'+
+  '<button onclick="rCalculate()" style="width:100%;padding:13px;background:var(--text);color:var(--bg);border:none;border-radius:var(--rsm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:4px;">원가 계산하기</button>'+
+  '<div id="r-result" style="display:none;margin-top:16px;"></div>';
+
+  var saved=null;
+  try{var s=localStorage.getItem('opr_roastery');if(s)saved=JSON.parse(s);}catch(e){}
+  if(saved){
+    var rb=document.getElementById('r-blend');if(rb)rb.value=saved.blend||'오프블렌드';
+    var rig=document.getElementById('r-input-g');if(rig)rig.value=saved.inputG||'';
+    var rog=document.getElementById('r-output-g');if(rog)rog.value=saved.outputG||'';
+    var rm=document.getElementById('r-margin');if(rm)rm.value=saved.margin||50;
+    var rv=document.getElementById('r-vat');if(rv)rv.value=saved.vat||'include';
+    if(saved.pkgs){document.querySelectorAll('.r-pkg').forEach(function(cb){cb.checked=saved.pkgs.indexOf(parseInt(cb.value))>=0;});}
+    if(saved.beans&&saved.beans.length){saved.beans.forEach(function(b){rAddBean(b.name,b.g,b.price);});}
+    else{rAddBean();rAddBean();}
+  } else {rAddBean();rAddBean();}
+}
+
+function rAddBean(name,g,price){
+  var c=document.getElementById('r-beans');if(!c)return;
+  var id=++roasteryBeanCount;
+  var d=document.createElement('div');d.id='rb-'+id;
+  d.style.cssText='border:0.5px solid var(--border);border-radius:var(--rsm);padding:12px;margin-bottom:8px;';
+  d.innerHTML='<div style="display:grid;grid-template-columns:1fr 85px 95px 26px;gap:6px;align-items:end;">'+
+  '<div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">원두명</div><input class="rb-name" type="text" placeholder="에티오피아 예가체프" value="'+(name||'')+'" oninput="saveRoastery()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface2);color:var(--text);"></div>'+
+  '<div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">중량 (g)</div><input class="rb-g" type="number" placeholder="3000" value="'+(g||'')+'" min="0" step="100" oninput="saveRoastery()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface2);color:var(--text);"></div>'+
+  '<div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">단가 (원/kg)</div><input class="rb-p" type="number" placeholder="12000" value="'+(price||'')+'" min="0" oninput="saveRoastery()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface2);color:var(--text);"></div>'+
+  '<button onclick="document.getElementById(\'rb-'+id+'\').remove();saveRoastery()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 0 4px;line-height:1;">×</button></div>'+
+  '<div style="font-size:10px;color:var(--text3);margin-top:4px;">예: 3kg → 3000 입력</div>';
+  c.appendChild(d);
+}
+
+function saveRoastery(){
+  try{
+    var beans=[];
+    document.querySelectorAll('[id^="rb-"]').forEach(function(b){
+      beans.push({name:b.querySelector('.rb-name')?.value||'',g:b.querySelector('.rb-g')?.value||'',price:b.querySelector('.rb-p')?.value||''});
+    });
+    var pkgs=[];document.querySelectorAll('.r-pkg:checked').forEach(function(cb){pkgs.push(parseInt(cb.value));});
+    localStorage.setItem('opr_roastery',JSON.stringify({
+      blend:document.getElementById('r-blend')?.value||'오프블렌드',
+      inputG:document.getElementById('r-input-g')?.value||'',
+      outputG:document.getElementById('r-output-g')?.value||'',
+      margin:document.getElementById('r-margin')?.value||50,
+      vat:document.getElementById('r-vat')?.value||'include',
+      pkgs:pkgs,beans:beans
+    }));
+  }catch(e){}
+}
+
+function rR100(n){return Math.round(n/100)*100;}
+function rFmt(n){return Math.round(n).toLocaleString()+'원';}
+
+function rCalculate(){
+  var totalCost=0;
+  document.querySelectorAll('[id^="rb-"]').forEach(function(b){
+    var g=parseFloat(b.querySelector('.rb-g')?.value)||0;
+    var p=parseFloat(b.querySelector('.rb-p')?.value)||0;
+    totalCost+=(g/1000)*p;
+  });
+  var outputG=parseFloat(document.getElementById('r-output-g')?.value)||0;
+  var outputKg=outputG/1000;
+  var margin=parseFloat(document.getElementById('r-margin')?.value)||50;
+  var vat=document.getElementById('r-vat')?.value||'include';
+  var pkgs=[];document.querySelectorAll('.r-pkg:checked').forEach(function(cb){pkgs.push(parseInt(cb.value));});
+  if(totalCost===0||outputKg===0||pkgs.length===0){alert('생두 원가, 생산량, 포장 단위를 모두 입력해주세요.');return;}
+  var perKg=totalCost/outputKg;
+  var html='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">'+
+  '<div style="background:var(--surface2);border-radius:var(--rsm);padding:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">총 생두 원가</div><div style="font-size:15px;">'+rFmt(totalCost)+'</div></div>'+
+  '<div style="background:var(--surface2);border-radius:var(--rsm);padding:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">생산량</div><div style="font-size:15px;">'+outputKg.toFixed(1)+'kg</div></div>'+
+  '<div style="background:var(--surface2);border-radius:var(--rsm);padding:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">kg당 원가</div><div style="font-size:15px;">'+rFmt(perKg)+'</div></div></div>'+
+  '<div class="sl">포장 단위별 원가 및 납품가</div>'+
+  '<div class="card-flush"><div style="overflow-x:auto;"><table><thead><tr>'+
+  '<th>용량</th><th style="text-align:right;">원가</th><th style="text-align:right;">납품가</th><th style="text-align:right;">순이익</th><th style="text-align:right;">마진율</th></tr></thead><tbody>';
+  pkgs.sort(function(a,b){return a-b;}).forEach(function(g){
+    var cp=perKg/1000*g,raw=cp/(1-margin/100),fp=rR100(vat==='include'?raw*1.1:raw),pr=fp-cp,am=(pr/fp*100);
+    html+='<tr><td>'+(g>=1000?(g/1000)+'kg':g+'g')+'</td><td style="text-align:right;font-family:var(--font-mono);font-size:12px;">'+rFmt(cp)+'</td><td style="text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:500;">'+rFmt(fp)+'</td><td style="text-align:right;font-family:var(--font-mono);font-size:12px;color:var(--green);">'+rFmt(pr)+'</td><td style="text-align:right;font-family:var(--font-mono);font-size:12px;">'+am.toFixed(1)+'%</td></tr>';
+  });
+  html+='</tbody></table></div></div><div class="sl">분석</div>';
+  var p5=rR100((perKg/1000*500)/(1-margin/100)*(vat==='include'?1.1:1));
+  var clr=margin>=50?'green':margin>=35?'amber':'red';
+  var msg=margin>=50?'마진율 '+margin+'% — 적정 수준입니다. 스마트스토어 판매에 적합합니다.':margin>=35?'마진율 '+margin+'% — 다소 낮습니다. 최소 40% 이상 권장합니다.':'마진율 '+margin+'% — 낮습니다. 수익성 검토가 필요합니다.';
+  html+='<div style="background:var(--'+clr+'-bg);border-radius:var(--rsm);padding:11px 14px;font-size:12px;color:var(--'+clr+');line-height:1.7;margin-bottom:8px;">'+msg+'</div>';
+  var m5r=18000;
+  var m5msg=p5<m5r*0.8?'500g 납품가('+rFmt(p5)+')가 시장 평균(약 18,000원) 대비 낮습니다. 마진율 재검토를 권장합니다.':p5>m5r*1.3?'500g 납품가('+rFmt(p5)+')가 시장 평균 대비 높습니다. 스페셜티 포지셔닝이 명확해야 합니다.':'500g 납품가('+rFmt(p5)+')는 시장 평균 범위 내입니다. 스마트스토어 판매 적합합니다.';
+  var m5clr=p5<m5r*0.8||p5>m5r*1.3?'blue':'green';
+  html+='<div style="background:var(--'+m5clr+'-bg);border-radius:var(--rsm);padding:11px 14px;font-size:12px;color:var(--'+m5clr+');line-height:1.7;">'+m5msg+'</div>';
+  var rr=document.getElementById('r-result');rr.innerHTML=html;rr.style.display='block';
+  saveRoastery();
+}
+
 /* ── INIT ── */
-buildPriceGrid();calcAndRender();renderSavedChips();loadEmps();renderAnnualTable();
+buildPriceGrid();calcAndRender();renderSavedChips();loadEmps();renderAnnualTable();loadRoastery();
 </script>
 </body>
 </html>
