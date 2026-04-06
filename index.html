@@ -199,9 +199,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .warn-box{background:var(--red-bg);border-radius:var(--rsm);padding:8px 12px;font-size:13px;color:var(--red);margin-bottom:6px;}
 .annual-table{width:100%;border-collapse:collapse;font-size:11px;}
 .annual-table th{text-align:right;padding:4px 6px;color:var(--text2);font-weight:400;border-bottom:0.5px solid var(--border);}
-.annual-table th:first-child{text-align:left;white-space:nowrap;}
+.annual-table th:first-child{text-align:left;}
 .annual-table td{text-align:right;padding:5px 6px;border-bottom:0.5px solid var(--border);}
-.annual-table td:first-child{text-align:left;font-weight:500;white-space:nowrap;}
+.annual-table td:first-child{text-align:left;font-weight:500;}
 .annual-table .total-row td{font-weight:600;border-top:0.5px solid var(--border2);color:var(--blue);}
 .month-sel{font-size:13px;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface);color:var(--text);font-family:inherit;width:auto;}
 
@@ -397,7 +397,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div id="sister-manual-mode" style="display:none;">
       <div class="row-lb"><span class="label-lb">근무시간</span><input type="number" id="sister-h" placeholder="0" style="width:58px" class="inline-input"><span class="unit-lb">시간</span><input type="number" id="sister-m" placeholder="0" style="width:55px" max="59" class="inline-input"><span class="unit-lb">분</span></div>
     </div>
-    <div class="note" style="margin-top:8px;">× 12,000원 · 50만원 이체 후 나머지 사장님 개인</div>
+    <div class="note" style="margin-top:8px;">× 13,000원 · 50만원 이체 후 나머지 사장님 개인</div>
   </div>
 
   <div class="sl">특이사항</div>
@@ -763,7 +763,7 @@ function renderMonthDetail(){
 }
 
 /* ── LABOR ── */
-var PREV_RATES={'노혜빈':10500,'김하은':10500,'이고은':10700,'진예빈':10700,'김건혜':12000,'박서현':10500,'허고운':10500};
+var PREV_RATES={'노혜빈':10500,'김하은':10500,'이고은':10700,'진예빈':10700,'김건혜':13000,'박서현':10500,'허고운':10500};
 var DEFAULT_EMPS=[{name:'박서현',rate:10500},{name:'허고운',rate:10500},{name:'김하은',rate:10500},{name:'이고은',rate:10700},{name:'진예빈',rate:10700}];
 var empCount=0,modes={noh:'paste',sister:'paste'},parsedHours={noh:null,sister:null},empParsedHours={};
 var annualData={employees:{'전유진':[2251650,2251650,2244440,2244440,null,null,null,null,null,null,null,null],'노혜빈':[1489768,1571362,1276295,1667205,null,null,null,null,null,null,null,null],'김건혜':[348120,360000,312000,300000,null,null,null,null,null,null,null,null],'김하은':[0,133687,223377,208147,null,null,null,null,null,null,null,null],'이고은':[0,0,0,289713,null,null,null,null,null,null,null,null],'진예빈':[0,0,0,118989,null,null,null,null,null,null,null,null]}};
@@ -855,7 +855,7 @@ function calcLocally(){
     if(name&&total>0){var r=['이고은','진예빈'].includes(name)?10700:rate;results.push({name:name,pay:Math.round(total*r*0.967),detail:fmtH(total)+' × '+r.toLocaleString()+'원 × 0.967',tag:'part'});}
   });
   var st=getHours('sister');
-  if(st>0){var pay=Math.round(st*12000);results.push({name:'김건혜',pay:pay,detail:fmtH(st)+' × 12,000원',tag:'sister',sisterPay:pay});}
+  if(st>0){var pay=Math.round(st*13000);results.push({name:'김건혜',pay:pay,detail:fmtH(st)+' × 13,000원',tag:'sister',sisterPay:pay});}
   return results;
 }
 
@@ -905,35 +905,16 @@ function renderAnnualTable(){
     vals.forEach(function(v,i){if(v&&v>0)totals[i]+=v;html+='<td>'+(!v||v===0?'-':(v/10000).toFixed(0)+'만')+'</td>';});
     html+='</tr>';
   });
-  html+='<tr style="background:var(--surface2);"><td style="font-weight:600;padding:6px;">월합계</td>';
-  totals.forEach(function(t){html+='<td style="font-weight:600;color:var(--blue);padding:6px;">'+(t===0?'-':(t/10000).toFixed(0)+'만')+'</td>';});
+  html+='<tr class="total-row"><td>월합계</td>';
+  totals.forEach(function(t){html+='<td>'+(t===0?'-':(t/10000).toFixed(0)+'만')+'</td>';});
   html+='</tr>';
   document.getElementById('annual-body').innerHTML=html;
+  var colors=['#378ADD','#1D9E75','#D85A30','#D4537E'];
   var isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   var tc=isDark?'#a0a09c':'#6b6b67';
+  var datasets=order.slice(0,4).map(function(emp,i){return{label:emp,data:(annualData.employees[emp]||Array(12).fill(0)).map(function(v){return v||0;}),backgroundColor:colors[i]+'33',borderColor:colors[i],borderWidth:1.5,fill:false,tension:0.3,pointRadius:3};});
   if(annualChart)annualChart.destroy();
-  annualChart=new Chart(document.getElementById('annualChart'),{
-    type:'bar',
-    data:{
-      labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
-      datasets:[{
-        label:'월 총 인건비',
-        data:totals,
-        backgroundColor:'#378ADD99',
-        borderColor:'#378ADD',
-        borderWidth:1.5,
-        borderRadius:4
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{display:false},ticks:{font:{size:10},color:tc}},
-        y:{ticks:{callback:function(v){return(v/10000).toFixed(0)+'만';},font:{size:10},color:tc},grid:{color:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}}
-      }
-    }
-  });
+  annualChart=new Chart(document.getElementById('annualChart'),{type:'line',data:{labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},boxWidth:10,padding:8,color:tc}}},scales:{y:{ticks:{callback:function(v){return(v/10000).toFixed(0)+'만';},font:{size:10},color:tc},grid:{color:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}},x:{ticks:{font:{size:10},color:tc},grid:{display:false}}}}});
 }
 
 /* ── INIT ── */
