@@ -197,11 +197,11 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .nowon-label{font-size:12px;color:var(--green);}
 .nowon-val{font-size:20px;font-weight:600;color:var(--green);}
 .warn-box{background:var(--red-bg);border-radius:var(--rsm);padding:8px 12px;font-size:13px;color:var(--red);margin-bottom:6px;}
-.annual-table{width:100%;border-collapse:collapse;font-size:11px;}
-.annual-table th{text-align:right;padding:4px 6px;color:var(--text2);font-weight:400;border-bottom:0.5px solid var(--border);}
-.annual-table th:first-child{text-align:left;}
-.annual-table td{text-align:right;padding:5px 6px;border-bottom:0.5px solid var(--border);}
-.annual-table td:first-child{text-align:left;font-weight:500;}
+.annual-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+.annual-table th{text-align:right;padding:4px 6px;color:var(--text2);font-weight:400;border-bottom:0.5px solid var(--border);white-space:nowrap;width:42px;}
+.annual-table th:first-child{text-align:left;width:60px;}
+.annual-table td{text-align:right;padding:5px 6px;border-bottom:0.5px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.annual-table td:first-child{text-align:left;font-weight:500;white-space:nowrap;}
 .annual-table .total-row td{font-weight:600;border-top:0.5px solid var(--border2);color:var(--blue);}
 .month-sel{font-size:13px;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface);color:var(--text);font-family:inherit;width:auto;}
 
@@ -461,7 +461,11 @@ var recipes={
   T07:{name:'말차',sell:6500,extraCost:0,ings:{화이트초코:190,버터:90,계란:140,생크림:160,전분:5,말차:17.5}}
 };
 var updatedKeys={};
-var salesDB={};
+var salesDB={
+'2026-01':{"year":2026,"month":1,"data":{"흑임자":{"qty":79,"revenue":507000,"cost":108941,"profit":398059},"치즈":{"qty":113,"revenue":757100,"cost":196507,"profit":560593},"치즈브륄레":{"qty":17,"revenue":117300,"cost":29767,"profit":87533},"단호박":{"qty":81,"revenue":526500,"cost":121419,"profit":405081},"초코":{"qty":103,"revenue":669500,"cost":128956,"profit":540544},"두바이":{"qty":279,"revenue":2494700,"cost":349308,"profit":2145392},"말차":{"qty":127,"revenue":825500,"cost":202565,"profit":622935}}},
+'2026-02':{"year":2026,"month":2,"data":{"흑임자":{"qty":61,"revenue":396500,"cost":84119,"profit":312381},"치즈":{"qty":108,"revenue":702000,"cost":187812,"profit":514188},"치즈브륄레":{"qty":22,"revenue":145200,"cost":38522,"profit":106678},"단호박":{"qty":61,"revenue":396500,"cost":91439,"profit":305061},"초코":{"qty":111,"revenue":721500,"cost":138972,"profit":582528},"두바이":{"qty":196,"revenue":1626800,"cost":245392,"profit":1381408},"말차":{"qty":104,"revenue":676000,"cost":165880,"profit":510120}}},
+'2026-03':{"year":2026,"month":3,"data":{"흑임자":{"qty":69,"revenue":448500,"cost":95151,"profit":353349},"치즈":{"qty":100,"revenue":650000,"cost":173900,"profit":476100},"치즈브륄레":{"qty":41,"revenue":270600,"cost":71791,"profit":198809},"단호박":{"qty":87,"revenue":565500,"cost":130413,"profit":435087},"초코":{"qty":119,"revenue":773500,"cost":148988,"profit":624512},"두바이":{"qty":148,"revenue":1228400,"cost":185296,"profit":1043104},"말차":{"qty":111,"revenue":721500,"cost":177045,"profit":544455}}}
+};
 var activeMonthKey=null;
 var salesQty={};
 var chartQty=null,chartProfit=null;
@@ -476,7 +480,7 @@ function sw(t){
   });
   var target=document.getElementById('panel-'+t);
   if(target){target.classList.add('active');target.style.display='block';}
-  if(t==='sales')buildSalesCards();
+  if(t==='sales'){buildSalesCards();renderSavedChips();}
   if(t==='annual-t')renderAnnual();
   if(t==='annual-l')renderAnnualTable();
   if(t==='roastery')renderRoastery();
@@ -1051,9 +1055,6 @@ function rCalculate(){
 }
 
 /* ── INIT ── */
-salesDB['2026-01']={"year":2026,"month":1,"data":{"흑임자":{"qty":79,"revenue":507000,"cost":108941,"profit":398059},"치즈":{"qty":113,"revenue":757100,"cost":196507,"profit":560593},"치즈브륄레":{"qty":17,"revenue":117300,"cost":29767,"profit":87533},"단호박":{"qty":81,"revenue":526500,"cost":121419,"profit":405081},"초코":{"qty":103,"revenue":669500,"cost":128956,"profit":540544},"두바이":{"qty":279,"revenue":2494700,"cost":349308,"profit":2145392},"말차":{"qty":127,"revenue":825500,"cost":202565,"profit":622935}}};
-salesDB['2026-02']={"year":2026,"month":2,"data":{"흑임자":{"qty":61,"revenue":396500,"cost":84119,"profit":312381},"치즈":{"qty":108,"revenue":702000,"cost":187812,"profit":514188},"치즈브륄레":{"qty":22,"revenue":145200,"cost":38522,"profit":106678},"단호박":{"qty":61,"revenue":396500,"cost":91439,"profit":305061},"초코":{"qty":111,"revenue":721500,"cost":138972,"profit":582528},"두바이":{"qty":196,"revenue":1626800,"cost":245392,"profit":1381408},"말차":{"qty":104,"revenue":676000,"cost":165880,"profit":510120}}};
-salesDB['2026-03']={"year":2026,"month":3,"data":{"흑임자":{"qty":69,"revenue":448500,"cost":95151,"profit":353349},"치즈":{"qty":100,"revenue":650000,"cost":173900,"profit":476100},"치즈브륄레":{"qty":41,"revenue":270600,"cost":71791,"profit":198809},"단호박":{"qty":87,"revenue":565500,"cost":130413,"profit":435087},"초코":{"qty":119,"revenue":773500,"cost":148988,"profit":624512},"두바이":{"qty":148,"revenue":1228400,"cost":185296,"profit":1043104},"말차":{"qty":111,"revenue":721500,"cost":177045,"profit":544455}}};
 buildPriceGrid();calcAndRender();renderSavedChips();loadEmps();renderAnnualTable();loadRoastery();
 </script>
 </body>
