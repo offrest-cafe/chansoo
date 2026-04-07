@@ -431,9 +431,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 </div>
 
 <script>
-var MENUS=['흑임자','치즈','치즈브륄레','단호박','초코','두바이','말차','르뱅','말차마카다미아','애플시나몬'];
-var SKUS={흑임자:'T01',치즈:'T02',치즈브륄레:'T03',단호박:'T04',초코:'T05',두바이:'T06',말차:'T07',르뱅:'C01',말차마카다미아:'C02',애플시나몬:'C03'};
-var MCOLORS=['#1D9E75','#378ADD','#5DCAA5','#BA7517','#D85A30','#C9A84C','#7F77DD','#E8A838','#4CAF50','#FF7043'];
+var MENUS=['흑임자','치즈','치즈브륄레','단호박','초코','두바이','말차'];
+var SKUS={흑임자:'T01',치즈:'T02',치즈브륄레:'T03',단호박:'T04',초코:'T05',두바이:'T06',말차:'T07'};
+var MCOLORS=['#1D9E75','#378ADD','#5DCAA5','#BA7517','#D85A30','#C9A84C','#7F77DD'];
 var ING_MAP=[
   {keys:['화이트초코','화이트 초코','white choco','칼리바우트 w','white chocolate','커버춰 w'],name:'화이트초코'},
   {keys:['골드초코','gold choco','칼리바우트 g'],name:'골드초코'},
@@ -449,7 +449,7 @@ var ING_MAP=[
   {keys:['말차','matcha','녹차'],name:'말차'},
   {keys:['단호박','호박'],name:'단호박'}
 ];
-var prices={화이트초코:30.04,골드초코:35.16,다크초코:28.56,버터:16.01,생크림:10.5,계란:5.33,전분:3.97,흑임자:19.25,크림치즈:17.13,로투스:11.6,코코아:45.5,말차:162,단호박:1000,중력분:1.415,박력분:1.64,옥수수전분:5.0,백설탕:1.9517,황설탕:2.6833,흑설탕:2.87,베이킹소다:23.5294,초코칩:9.34,호두:13.2353,마카다미아:22.0,아몬드가루:27.0,시나몬:23.3333,사과잼:8.225};
+var prices={화이트초코:30.04,골드초코:35.16,다크초코:28.56,버터:16.01,생크림:10.5,계란:5.33,전분:3.97,흑임자:19.25,크림치즈:17.13,로투스:11.6,코코아:45.5,말차:162,단호박:1000};
 var recipes={
   T01:{name:'흑임자',sell:6500,extraCost:0,ings:{화이트초코:190,버터:70,계란:125,생크림:160,전분:5,흑임자:80}},
   T02:{name:'치즈',sell:6500,extraCost:0,ings:{화이트초코:190,버터:80,계란:125,생크림:160,전분:5,크림치즈:200,로투스:85}},
@@ -457,10 +457,7 @@ var recipes={
   T04:{name:'단호박',sell:6500,extraCost:0,ings:{화이트초코:165,골드초코:25,버터:70,계란:125,생크림:160,전분:5,단호박:'fixed'}},
   T05:{name:'초코',sell:6500,extraCost:0,ings:{다크초코:120,화이트초코:70,버터:90,계란:140,생크림:160,전분:5,코코아:16}},
   T06:{name:'두바이',sell:8300,extraCost:16000,ings:{다크초코:120,화이트초코:70,버터:90,계란:140,생크림:160,전분:5,코코아:16}},
-  T07:{name:'말차',sell:6500,extraCost:0,ings:{화이트초코:190,버터:90,계란:140,생크림:160,전분:5,말차:17.5}},
-  C01:{name:'르뱅',sell:4500,extraCost:0,yield:25,ings:{버터:600,중력분:600,박력분:360,베이킹소다:6,옥수수전분:8,백설탕:300,황설탕:200,흑설탕:100,계란:300,호두:200,초코칩:350}},
-  C02:{name:'말차마카다미아',sell:4500,extraCost:0,yield:29,ings:{버터:600,백설탕:240,흑설탕:450,계란:300,중력분:500,박력분:400,베이킹소다:12,말차:90,마카다미아:300,화이트초코:700}},
-  C03:{name:'애플시나몬',sell:4500,extraCost:0,yield:25,ings:{버터:630,백설탕:270,흑설탕:450,계란:300,중력분:500,박력분:440,베이킹소다:12,시나몬:90,아몬드가루:40,사과잼:1250}}
+  T07:{name:'말차',sell:6500,extraCost:0,ings:{화이트초코:190,버터:90,계란:140,생크림:160,전분:5,말차:17.5}}
 };
 var updatedKeys={};
 var salesDB={
@@ -494,7 +491,7 @@ function calcCost(sku){
   Object.keys(r.ings).forEach(function(ing){var v=r.ings[ing];total+=v==='fixed'?(prices[ing]||0):(prices[ing]||0)*v;});
   return total+(r.extraCost||0);
 }
-function pieceCostOf(menu){var sku=Object.keys(recipes).find(function(k){return recipes[k].name===menu;});return sku?calcCost(sku)/(recipes[sku].yield||8):0;}
+function pieceCostOf(menu){var sku=Object.keys(recipes).find(function(k){return recipes[k].name===menu;});return sku?calcCost(sku)/8:0;}
 function setSell(sku,val){var n=parseInt(val.replace(/[^0-9]/g,''));if(!isNaN(n)&&n>0){recipes[sku].sell=n;calcAndRender();}}
 
 function calcAndRender(){
