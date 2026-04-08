@@ -1113,7 +1113,7 @@ function renderCookiePanel(){
   });
   ingHtml+='</div>';
   var cardHtml='<h2 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text2)">쿠키 원가 분석</h2>';
-  Object.keys(recipes).forEach(function(sku){
+  Object.keys(recipes).filter(function(k){return k.charAt(0)==='C';}).forEach(function(sku){
     var r=recipes[sku];
     var totalIngCost=0;
     Object.keys(r.ings).forEach(function(ing){totalIngCost+=(prices[ing]||0)*r.ings[ing];});
