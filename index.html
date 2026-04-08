@@ -437,6 +437,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 var MENUS=['흑임자','치즈','치즈브륄레','단호박','초코','두바이','말차'];
 var SKUS={흑임자:'T01',치즈:'T02',치즈브륄레:'T03',단호박:'T04',초코:'T05',두바이:'T06',말차:'T07'};
 var MCOLORS=['#1D9E75','#378ADD','#5DCAA5','#BA7517','#D85A30','#C9A84C','#7F77DD'];
+var TERRINE_INGS=['화이트초코','골드초코','다크초코','버터','생크림','계란','전분','흑임자','크림치즈','로투스','코코아','말차','단호박'];
 var COOKIE_MENUS=['르뱅','말차마카다미아','애플시나몬'];
 var COOKIE_SKUS={르뱅:'C01',말차마카다미아:'C02',애플시나몬:'C03'};
 var COOKIE_COLORS=['#E8A838','#4CAF50','#FF7043'];
@@ -504,8 +505,8 @@ function pieceCostOf(menu){var sku=Object.keys(recipes).find(function(k){return 
 function setSell(sku,val){var n=parseInt(val.replace(/[^0-9]/g,''));if(!isNaN(n)&&n>0){recipes[sku].sell=n;calcAndRender();}}
 
 function calcAndRender(){
-  var results=Object.keys(recipes).map(function(sku){
-    var pc=calcCost(sku),p=pc/8,s=recipes[sku].sell||6500,pr=s-p,cr=(p/s)*100,prt=(pr/s)*100;
+  var results=Object.keys(recipes).filter(function(sku){return sku[0]==='T';}).map(function(sku){
+    var pc=calcCost(sku),p=pc/(recipes[sku].yield||8),s=recipes[sku].sell||6500,pr=s-p,cr=(p/s)*100,prt=(pr/s)*100;
     return {sku:sku,name:recipes[sku].name,sell:s,pieceCost:p,profit:pr,costRate:cr,profitRate:prt};
   });
   var maxCR=Math.max.apply(null,results.map(function(r){return r.costRate;}));
@@ -554,7 +555,7 @@ function calcAndRender(){
 
 function buildPriceGrid(){
   var grid=document.getElementById('price-grid');grid.innerHTML='';
-  Object.keys(prices).forEach(function(name){
+  TERRINE_INGS.forEach(function(name){
     var div=document.createElement('div');div.className='price-item'+(updatedKeys[name]?' upd':'');
     var unit=name==='단호박'?'원/판':'원/g';
     div.innerHTML='<div class="price-name">'+name+'</div><div class="price-row"><input type="number" step="0.01" min="0" value="'+prices[name]+'" oninput="prices[\''+name+'\']=parseFloat(this.value)||0;calcAndRender()"><span class="price-unit">'+unit+'</span></div>';
@@ -1096,22 +1097,58 @@ function rCalculate(){
 }
 
 function renderCookiePanel(){
+  var panel=document.getElementById('panel-cookie');
   var ci=['중력분','박력분','옥수수전분','백설탕','황설탕','흑설탕','베이킹소다','초코칩','호두','마카다미아','아몬드가루','시나몬','사과잼','버터','계란','말차','화이트초코'];
-  var h='<div class="s1">재료 단가</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px;">';
-  ci.forEach(function(ing){if(prices[ing]===undefined)return;h+='<div style="background:var(--surface);border-radius:var(--r);padding:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">'+ing+'</div><div style="font-family:var(--font-mono);font-size:13px;">'+prices[ing]+'<span style="font-size:11px;color:var(--text3);margin-left:2px;">원/g</span></div></div>';});
-  h+='</div><div class="s1">쿠키 원가</div>';
-  COOKIE_MENUS.forEach(function(menu,i){
-    var sku=COOKIE_SKUS[menu],r=recipes[sku];if(!r)return;
-    var pc=Math.round(calcCost(sku)/r.yield),mg=Math.round((r.sell-pc)/r.sell*100),pf=r.sell-pc,cl=COOKIE_COLORS[i];
-    h+='<div style="background:var(--surface);border-radius:var(--r);padding:16px;margin-bottom:12px;">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:'+cl+';flex-shrink:0;"></div><div style="font-weight:500;">'+menu+'</div><div style="font-size:11px;color:var(--text3);">'+sku+'</div></div><div style="font-family:var(--font-mono);font-size:13px;color:var(--green);">마진 '+mg+'%</div></div>';
-    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">';
-    [['원가/개',pc.toLocaleString()+'원'],['판매가',r.sell.toLocaleString()+'원'],['개당이익',pf.toLocaleString()+'원'],['수율',r.yield+'개']].forEach(function(kv){h+='<div style="background:var(--surface2);border-radius:var(--rsm);padding:10px;text-align:center;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">'+kv[0]+'</div><div style="font-family:var(--font-mono);font-size:13px;">'+kv[1]+'</div></div>';});
-    h+='</div><div style="font-size:11px;color:var(--text3);margin-bottom:6px;">레시피 (배치)</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-    Object.keys(r.ings).forEach(function(ing){h+='<div style="background:var(--surface2);border-radius:4px;padding:4px 8px;font-size:12px;">'+ing+' '+r.ings[ing]+'g</div>';});
-    h+='</div></div>';
+  var pgHtml='<div class="s1">재료 단가</div><div class="price-grid" id="cookie-price-grid">';
+  ci.forEach(function(name){
+    if(prices[name]===undefined)return;
+    pgHtml+='<div class="price-item"><div class="price-name">'+name+'</div><div class="price-row"><input type="number" step="0.01" min="0" value="'+prices[name]+'" oninput="prices[''+name+'']=parseFloat(this.value)||0;renderCookiePanel()"><span class="price-unit">원/g</span></div></div>';
   });
-  document.getElementById('panel-cookie').innerHTML=h;
+  pgHtml+='</div>';
+  var results=COOKIE_MENUS.map(function(menu,i){
+    var sku=COOKIE_SKUS[menu],r=recipes[sku];
+    var pc=calcCost(sku),p=pc/r.yield,s=r.sell||4500,pr=s-p,cr=(p/s)*100,prt=(pr/s)*100;
+    return {sku:sku,name:menu,sell:s,pieceCost:p,profit:pr,costRate:cr,profitRate:prt,color:COOKIE_COLORS[i]};
+  });
+  var maxCR=Math.max.apply(null,results.map(function(r){return r.costRate;}));
+  var maxP=Math.max.apply(null,results.map(function(r){return r.profit;}));
+  var avgCR=results.reduce(function(s,r){return s+r.costRate;},0)/results.length;
+  var avgP=results.reduce(function(s,r){return s+r.profit;},0)/results.length;
+  var avgS=results.reduce(function(s,r){return s+r.sell;},0)/results.length;
+  var sumHtml='<div class="summary-grid">'+
+    '<div class="sum-cell"><div class="sum-label">평균 원가율</div><div class="sum-val">'+avgCR.toFixed(1)+'%</div></div>'+
+    '<div class="sum-cell"><div class="sum-label">평균 이익</div><div class="sum-val">'+Math.round(avgP).toLocaleString()+'원</div></div>'+
+    '<div class="sum-cell"><div class="sum-label">평균 판매가</div><div class="sum-val">'+Math.round(avgS).toLocaleString()+'원</div></div>'+
+  '</div>';
+  var cardsHtml='<div class="s1">쿠키 원가</div>';
+  results.forEach(function(r){
+    var iD=Math.abs(r.costRate-maxCR)<0.01,iS=Math.abs(r.profit-maxP)<0.01;
+    var profColor=r.profit>=0?'var(--green)':'var(--red)';
+    var badge=iD?'<span class="badge badge-red">원가 높음</span>':iS?'<span class="badge badge-green">이익 높음</span>':'';
+    cardsHtml+='<div class="item-card'+(iD?' highlight-red':iS?' highlight-green':'')+'">'+
+      '<div class="ic-header">'+
+        '<div>'+
+          '<div class="ic-name"><span class="mdot" style="background:'+r.color+'"></span>'+r.name+'</div>'+
+          '<div class="ic-sku">'+r.sku+'</div>'+
+        '</div>'+
+        '<div>'+
+          '<div class="ic-main-label">이익</div>'+
+          '<div class="ic-main-val" style="color:'+profColor+'">'+Math.round(r.profit).toLocaleString()+'원</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="ic-grid">'+
+        '<div><div class="ic-cell-label">1개 원가</div><div class="ic-cell-val">'+Math.round(r.pieceCost).toLocaleString()+'원</div></div>'+
+        '<div><div class="ic-cell-label">원가율</div><div class="ic-cell-val">'+r.costRate.toFixed(1)+'%</div></div>'+
+        '<div><div class="ic-cell-label">이익률</div><div class="ic-cell-val">'+r.profitRate.toFixed(1)+'%</div></div>'+
+      '</div>'+
+      '<div class="ic-bottom">'+
+        '<span style="font-size:12px;color:var(--text2);">판매가</span>'+
+        '<input class="sell-input" type="text" inputmode="numeric" value="'+r.sell.toLocaleString()+'원" onchange="setSell(''+r.sku+'',this.value);renderCookiePanel();" onfocus="this.value=recipes[''+r.sku+''].sell" onblur="this.value=recipes[''+r.sku+''].sell.toLocaleString()+'원'">'+
+        '<div class="ic-badges">'+badge+'</div>'+
+      '</div>'+
+    '</div>';
+  });
+  panel.innerHTML=pgHtml+sumHtml+cardsHtml;
 }
 /* ── INIT ── */
 buildPriceGrid();calcAndRender();renderSavedChips();loadEmps();renderAnnualTable();loadRoastery();renderCookiePanel();
