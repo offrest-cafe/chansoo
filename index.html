@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+h<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,7 @@
   --bg:#F5F3EE;--surface:#FFF;--surface2:#EFEDE8;
   --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);
   --text:#1A1A18;--text2:#6B6960;--text3:#A8A49C;
-  --green:#2D6A4F;--green-bg:#EAF3EE;
+  --green:#2D6A4F;--green-bg:#EAF3EE;h
   --red:#A32D2D;--red-bg:#FCEBEB;
   --amber:#854F0B;--amber-bg:#FDF3E3;
   --blue:#185FA5;--blue-bg:#E6F1FB;
@@ -212,6 +212,52 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .price-grid{grid-template-columns:repeat(2,1fr);}
   .recipe-grid{grid-template-columns:1fr 1fr;}
 }
+
+/* ===== DESIGN UPGRADE ===== */
+html{scroll-behavior:smooth}
+.nav{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(28,28,26,0.88);border-bottom:1px solid rgba(255,255,255,0.06)}
+.nav-tab{font-size:13px;padding:14px 18px;color:var(--text3);transition:color 0.2s}
+.nav-tab:hover{color:var(--text2)}
+.nav-tab.active{color:var(--text);font-weight:600}
+.nav-logo{font-weight:300;letter-spacing:3px;color:var(--text3);font-size:11px}
+.page-title{font-size:22px;font-weight:700}
+.page-sub{font-size:13px;color:var(--text2);margin-top:4px}
+.label-lb,.row-lb{font-size:12px;color:var(--text2);font-weight:600;letter-spacing:0.8px}
+.price-item{border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 16px;background:var(--surface);transition:border-color 0.2s,background 0.2s}
+.price-item:hover{border-color:rgba(255,255,255,0.22);background:rgba(49,49,48,0.6)}
+.price-name{font-size:12px;color:var(--text2);font-weight:500}
+.price-unit,.unit-lb{font-size:12px;color:var(--text3)}
+.card{border:1px solid rgba(255,255,255,0.08);border-radius:12px}
+.btn:not(.btn-primary):not(.btn-full):not(.nav-tab):not(.mtab):not(.mode-btn){border:1px solid rgba(255,255,255,0.18);background:transparent;color:var(--text2);font-size:13px;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s}
+.btn:not(.btn-primary):not(.btn-full):not(.nav-tab):not(.mtab):not(.mode-btn):hover{border-color:rgba(255,255,255,0.35);color:var(--text);background:rgba(255,255,255,0.04)}
+.btn-primary{background:var(--green);color:#111;font-weight:600;font-size:13px;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(151,196,89,0.12)}
+.btn-primary:hover{filter:brightness(1.1);box-shadow:0 4px 14px rgba(151,196,89,0.22)}
+.tbtn{border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text2);font-size:13px;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s}
+.tbtn:hover{border-color:rgba(255,255,255,0.3);color:var(--text)}
+.kpi-cell,.sum-cell{padding:18px 22px;border-radius:10px;background:var(--surface);border:1px solid rgba(255,255,255,0.08)}
+.kpi-label,.sum-label,.total-label{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px}
+.kpi-val,.sum-val,.total-val{font-weight:700;font-size:22px}
+.item-card{border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:22px 24px;margin-bottom:14px;background:var(--surface);transition:border-color 0.2s}
+.item-card:hover{border-color:rgba(255,255,255,0.18)}
+.ic-name{font-size:16px;font-weight:700}
+.ic-sku{font-size:11px;color:var(--text3)}
+.ic-cell-label{font-size:11px;color:var(--text2);font-weight:500}
+.ic-cell-val{font-size:14px;font-weight:600}
+.ic-main-label{font-size:11px;color:var(--text2)}
+.ic-main-val{font-weight:700}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(151,196,89,0.08)}
+.paste-textarea{border:1px solid rgba(255,255,255,0.12);border-radius:10px;font-size:13px;line-height:1.6}
+.divider{border-color:rgba(255,255,255,0.06);margin:32px 0}
+.dot{width:8px;height:8px;border-radius:50%}
+.sell-input,.qty-input{transition:border-color 0.2s}
+.emp-block{border:1px solid rgba(255,255,255,0.08);border-radius:12px;transition:border-color 0.2s}
+.emp-block:hover{border-color:rgba(255,255,255,0.15)}
+.ename{font-size:15px;font-weight:600}
+.mtab{border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:6px 14px;font-size:12px;color:var(--text3);transition:all 0.2s}
+.mtab.active,.mtab:hover{border-color:var(--text2);color:var(--text)}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.annual-table{border-radius:10px;overflow:hidden}
+
 </style>
 </head>
 <body>
@@ -241,7 +287,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <div class="sl">결제내역 붙여넣기</div>
   <div class="card">
     <textarea class="paste-area" id="paste-input" placeholder="네이버페이 결제내역을 붙여넣으세요.&#10;예) 칼리바우트 화이트 초콜릿 W2 2.5kg / 수량 4개 / 301,200원"></textarea>
-    <div class="btn-row"><button class="btn" onclick="parseReceipt()">단가 분석하기</button></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="parseReceipt()">단가 분석하기</button></div>
     <div id="parsed-results" style="margin-top:10px;"></div>
   </div>
 
