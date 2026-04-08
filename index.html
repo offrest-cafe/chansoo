@@ -1102,55 +1102,46 @@ function setCookieSell(el){var sku=el.dataset.sku;var v=parseInt(el.value.replac
 function renderCookiePanel(){
   var panel=document.getElementById('panel-cookie');
   if(!panel)return;
-  var q=String.fromCharCode(39);
-  var ingHtml='<h2 style="margin:0 0 12px;font-size:16px;color:#555">재료 단가 (원/g)</h2>';
-  ingHtml+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:24px">';
+  var ingHtml='<h2 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text2)">재료 단가 (원/g)</h2>';
+  ingHtml+='<div class="price-grid" style="margin-bottom:24px">';
   COOKIE_INGS.forEach(function(name){
-    ingHtml+='<div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:10px">';
-    ingHtml+='<div class="ic-cell-label">'+name+'</div>';
-    ingHtml+='<input type="number" step="0.01" min="0" value="'+prices[name]+'" data-name="'+name+'" oninput="updateCookiePrice(this)" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:4px 6px;font-size:13px;box-sizing:border-box;margin-top:4px">';
+    var val=prices[name]||0;
+    ingHtml+='<div class="price-item">';
+    ingHtml+='<div class="price-name">'+name+'</div>';
+    ingHtml+='<div class="price-row"><input type="number" class="sell-input" style="width:68px" value="'+val+'" data-name="'+name+'" oninput="updateCookiePrice(this)"><span style="font-size:11px;color:var(--text3);margin-left:4px">원/g</span></div>';
     ingHtml+='</div>';
   });
   ingHtml+='</div>';
-  var cardsHtml='<h2 style="margin:0 0 12px;font-size:16px;color:#555">품목별 원가 분석</h2>';
-  cardsHtml+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">';
-  COOKIE_MENUS.forEach(function(menu,mi){
-    var sku=COOKIE_SKUS[menu];
+  var cardHtml='<h2 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text2)">쿠키 원가 분석</h2>';
+  Object.keys(recipes).forEach(function(sku){
     var r=recipes[sku];
-    if(!r)return;
-    var cost=calcCost(sku);
-    var pc=cost/(r.yield||1);
-    var margin=r.sell-pc;
-    var pct=r.sell>0?Math.round(margin/r.sell*100):0;
-    var color=COOKIE_COLORS[mi];
-    var ingRows='';
-    Object.keys(r.ings).forEach(function(ig){
-      var g=r.ings[ig];
-      var igCost=(prices[ig]||0)*g/1000;
-      ingRows+='<div class="ic-cell-label">'+ig+'</div><div class="ic-cell-val">'+g+'g / '+Math.round(igCost)+'원</div>';
+    var totalIngCost=0;
+    Object.keys(r.ings).forEach(function(ing){totalIngCost+=(prices[ing]||0)*r.ings[ing];});
+    var batchCost=totalIngCost+(r.extraCost||0);
+    var unitCost=batchCost/r.yield;
+    var margin=r.sell-unitCost;
+    var marginPct=r.sell>0?(margin/r.sell*100):0;
+    var mc=margin>=0?'var(--green)':'var(--red)';
+    cardHtml+='<div class="item-card" style="margin-bottom:16px">';
+    cardHtml+='<div class="ic-header">';
+    cardHtml+='<div><div class="ic-name">'+r.name+'</div><div class="ic-sku">'+sku+'</div></div>';
+    cardHtml+='<div style="text-align:right"><div class="ic-main-label">개당 원가</div><div class="ic-main-val">'+Math.round(unitCost).toLocaleString()+'원</div></div>';
+    cardHtml+='</div>';
+    cardHtml+='<div class="ic-grid">';
+    Object.keys(r.ings).forEach(function(ing){
+      var ingCost=(prices[ing]||0)*r.ings[ing];
+      cardHtml+='<div><div class="ic-cell-label">'+ing+'</div><div class="ic-cell-val">'+Math.round(ingCost).toLocaleString()+'원</div></div>';
     });
-    var mc=margin>=0?'#388e3c':'#d32f2f';
-    cardsHtml+='<div class="item-card">';
-    cardsHtml+='<div class="ic-header" style="background:'+color+'">';
-    cardsHtml+='<span class="ic-name">'+menu+'</span><span class="mdot">·</span><span class="ic-sku">'+sku+'</span>';
-    cardsHtml+='</div>';
-    cardsHtml+='<div style="padding:12px">';
-    cardsHtml+='<div class="ic-main-label">개당 원가</div>';
-    cardsHtml+='<div class="ic-main-val">'+Math.round(pc).toLocaleString()+'원</div>';
-    cardsHtml+='<div class="ic-grid" style="margin-top:8px">'+ingRows+'</div>';
-    cardsHtml+='</div>';
-    cardsHtml+='<div class="ic-bottom"><div class="summary-grid">';
-    cardsHtml+='<div class="sum-cell"><div class="ic-cell-label">총 배치 원가</div><div class="ic-cell-val">'+Math.round(cost).toLocaleString()+'원</div></div>';
-    cardsHtml+='<div class="sum-cell"><div class="ic-cell-label">수량</div><div class="ic-cell-val">'+(r.yield||1)+'개</div></div>';
-    cardsHtml+='<div class="sum-cell"><div class="ic-cell-label">판매가</div>';
-    cardsHtml+='<input class="sell-input" type="text" inputmode="numeric" data-sku="'+sku+'" value="'+r.sell.toLocaleString()+'원" onchange="setCookieSell(this)" onfocus="this.value=recipes[this.dataset.sku].sell" onblur="this.value=recipes[this.dataset.sku].sell.toLocaleString()+'+q+'원'+q+'">';
-    cardsHtml+='</div>';
-    cardsHtml+='<div class="sum-cell"><div class="ic-cell-label">마진</div><div class="ic-cell-val" style="color:'+mc+'">'+Math.round(margin).toLocaleString()+'원 ('+pct+'%)</div></div>';
-    cardsHtml+='</div></div>';
-    cardsHtml+='</div>';
+    cardHtml+='</div>';
+    cardHtml+='<div class="ic-bottom">';
+    cardHtml+='<div class="sum-cell"><div class="sum-label">배치 원가</div><div class="sum-val">'+Math.round(batchCost).toLocaleString()+'원</div></div>';
+    cardHtml+='<div class="sum-cell"><div class="sum-label">수량</div><div class="sum-val">'+r.yield+'개</div></div>';
+    cardHtml+='<div class="sum-cell"><div class="sum-label">판매가</div><input type="text" class="sell-input" value="'+r.sell.toLocaleString()+'원" data-sku="'+sku+'" onfocus="this.value=recipes[this.dataset.sku].sell" onblur="setCookieSell(this)" style="width:80px"></div>';
+    cardHtml+='<div class="sum-cell"><div class="sum-label">마진</div><div class="sum-val" style="color:'+mc+'">'+Math.round(margin).toLocaleString()+'원 ('+marginPct.toFixed(1)+'%)</div></div>';
+    cardHtml+='</div>';
+    cardHtml+='</div>';
   });
-  cardsHtml+='</div>';
-  panel.innerHTML=ingHtml+cardsHtml;
+  panel.innerHTML=ingHtml+cardHtml;
 }
 /* ── INIT ── */
 buildPriceGrid();calcAndRender();renderSavedChips();loadEmps();renderAnnualTable();loadRoastery();renderCookiePanel();
