@@ -226,6 +226,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <button class="nav-tab" onclick="sw('labor')">인건비</button>
       <button class="nav-tab" onclick="sw('annual-l')">인건비 연간</button>
       <button class="nav-tab" onclick="sw('roastery')">원두 원가</button>
+      <button class="nav-tab" onclick="sw('cookie')">쿠키</button>
     </div>
   </div>
 </div>
@@ -428,12 +429,17 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 <div class="panel" id="panel-roastery" style="display:none;"></div>
 
+<div id="panel-cookie" class="panel" style="display:none;"></div>
+
 </div>
 
 <script>
 var MENUS=['흑임자','치즈','치즈브륄레','단호박','초코','두바이','말차'];
 var SKUS={흑임자:'T01',치즈:'T02',치즈브륄레:'T03',단호박:'T04',초코:'T05',두바이:'T06',말차:'T07'};
 var MCOLORS=['#1D9E75','#378ADD','#5DCAA5','#BA7517','#D85A30','#C9A84C','#7F77DD'];
+var COOKIE_MENUS=['르뱅','말차마카다미아','애플시나몬'];
+var COOKIE_SKUS={르뱅:'C01',말차마카다미아:'C02',애플시나몬:'C03'};
+var COOKIE_COLORS=['#E8A838','#4CAF50','#FF7043'];
 var ING_MAP=[
   {keys:['화이트초코','화이트 초코','white choco','칼리바우트 w','white chocolate','커버춰 w'],name:'화이트초코'},
   {keys:['골드초코','gold choco','칼리바우트 g'],name:'골드초코'},
@@ -449,7 +455,7 @@ var ING_MAP=[
   {keys:['말차','matcha','녹차'],name:'말차'},
   {keys:['단호박','호박'],name:'단호박'}
 ];
-var prices={화이트초코:30.04,골드초코:35.16,다크초코:28.56,버터:16.01,생크림:10.5,계란:5.33,전분:3.97,흑임자:19.25,크림치즈:17.13,로투스:11.6,코코아:45.5,말차:162,단호박:1000};
+var prices={화이트초코:30.04,골드초코:35.16,다크초코:28.56,버터:16.01,생크림:10.5,계란:5.33,전분:3.97,흑임자:19.25,크림치즈:17.13,로투스:11.6,코코아:45.5,말차:162,단호박:1000,중력분:1.415,박력분:1.64,옥수수전분:5.0,백설탕:1.9517,황설탕:2.6833,흑설탕:2.87,베이킹소다:23.5294,초코칩:9.34,호두:13.2353,마카다미아:22.0,아몬드가루:27.0,시나몬:23.3333,사과잼:8.225};
 var recipes={
   T01:{name:'흑임자',sell:6500,extraCost:0,ings:{화이트초코:190,버터:70,계란:125,생크림:160,전분:5,흑임자:80}},
   T02:{name:'치즈',sell:6500,extraCost:0,ings:{화이트초코:190,버터:80,계란:125,생크림:160,전분:5,크림치즈:200,로투스:85}},
@@ -457,7 +463,10 @@ var recipes={
   T04:{name:'단호박',sell:6500,extraCost:0,ings:{화이트초코:165,골드초코:25,버터:70,계란:125,생크림:160,전분:5,단호박:'fixed'}},
   T05:{name:'초코',sell:6500,extraCost:0,ings:{다크초코:120,화이트초코:70,버터:90,계란:140,생크림:160,전분:5,코코아:16}},
   T06:{name:'두바이',sell:8300,extraCost:16000,ings:{다크초코:120,화이트초코:70,버터:90,계란:140,생크림:160,전분:5,코코아:16}},
-  T07:{name:'말차',sell:6500,extraCost:0,ings:{화이트초코:190,버터:90,계란:140,생크림:160,전분:5,말차:17.5}}
+  T07:{name:'말차',sell:6500,extraCost:0,ings:{화이트초코:190,버터:90,계란:140,생크림:160,전분:5,말차:17.5}},
+  C01:{name:'르뱅',sell:4500,extraCost:0,yield:25,ings:{버터:600,중력분:600,박력분:360,베이킹소다:6,옥수수전분:8,백설탕:300,황설탕:200,흑설탕:100,계란:300,호두:200,초코칩:350}},
+  C02:{name:'말차마카다미아',sell:4500,extraCost:0,yield:29,ings:{버터:600,백설탕:240,흑설탕:450,계란:300,중력분:500,박력분:400,베이킹소다:12,말차:90,마카다미아:300,화이트초코:700}},
+  C03:{name:'애플시나몬',sell:4500,extraCost:0,yield:25,ings:{버터:630,백설탕:270,흑설탕:450,계란:300,중력분:500,박력분:440,베이킹소다:12,시나몬:90,아몬드가루:40,사과잼:1250}}
 };
 var updatedKeys={};
 var salesDB={
@@ -471,7 +480,7 @@ var chartQty=null,chartProfit=null;
 
 /* ── TAB ── */
 function sw(t){
-  var allTabs=['cost','sales','annual-t','labor','annual-l','roastery'];
+  var allTabs=['cost','sales','annual-t','labor','annual-l','roastery','cookie'];
   document.querySelectorAll('.nav-tab').forEach(function(el,i){el.classList.toggle('active',allTabs[i]===t);});
   document.querySelectorAll('.panel').forEach(function(el){
     el.classList.remove('active');
@@ -491,7 +500,7 @@ function calcCost(sku){
   Object.keys(r.ings).forEach(function(ing){var v=r.ings[ing];total+=v==='fixed'?(prices[ing]||0):(prices[ing]||0)*v;});
   return total+(r.extraCost||0);
 }
-function pieceCostOf(menu){var sku=Object.keys(recipes).find(function(k){return recipes[k].name===menu;});return sku?calcCost(sku)/8:0;}
+function pieceCostOf(menu){var sku=Object.keys(recipes).find(function(k){return recipes[k].name===menu;});return sku?calcCost(sku)/(recipes[sku].yield||8):0;}
 function setSell(sku,val){var n=parseInt(val.replace(/[^0-9]/g,''));if(!isNaN(n)&&n>0){recipes[sku].sell=n;calcAndRender();}}
 
 function calcAndRender(){
@@ -1086,8 +1095,26 @@ function rCalculate(){
   saveRoastery();
 }
 
+function renderCookiePanel(){
+  var ci=['중력분','박력분','옥수수전분','백설탕','황설탕','흑설탕','베이킹소다','초코칩','호두','마카다미아','아몬드가루','시나몬','사과잼','버터','계란','말차','화이트초코'];
+  var h='<div class="s1">재료 단가</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px;">';
+  ci.forEach(function(ing){if(prices[ing]===undefined)return;h+='<div style="background:var(--surface);border-radius:var(--r);padding:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">'+ing+'</div><div style="font-family:var(--font-mono);font-size:13px;">'+prices[ing]+'<span style="font-size:11px;color:var(--text3);margin-left:2px;">원/g</span></div></div>';});
+  h+='</div><div class="s1">쿠키 원가</div>';
+  COOKIE_MENUS.forEach(function(menu,i){
+    var sku=COOKIE_SKUS[menu],r=recipes[sku];if(!r)return;
+    var pc=Math.round(calcCost(sku)/r.yield),mg=Math.round((r.sell-pc)/r.sell*100),pf=r.sell-pc,cl=COOKIE_COLORS[i];
+    h+='<div style="background:var(--surface);border-radius:var(--r);padding:16px;margin-bottom:12px;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:'+cl+';flex-shrink:0;"></div><div style="font-weight:500;">'+menu+'</div><div style="font-size:11px;color:var(--text3);">'+sku+'</div></div><div style="font-family:var(--font-mono);font-size:13px;color:var(--green);">마진 '+mg+'%</div></div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">';
+    [['원가/개',pc.toLocaleString()+'원'],['판매가',r.sell.toLocaleString()+'원'],['개당이익',pf.toLocaleString()+'원'],['수율',r.yield+'개']].forEach(function(kv){h+='<div style="background:var(--surface2);border-radius:var(--rsm);padding:10px;text-align:center;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">'+kv[0]+'</div><div style="font-family:var(--font-mono);font-size:13px;">'+kv[1]+'</div></div>';});
+    h+='</div><div style="font-size:11px;color:var(--text3);margin-bottom:6px;">레시피 (배치)</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    Object.keys(r.ings).forEach(function(ing){h+='<div style="background:var(--surface2);border-radius:4px;padding:4px 8px;font-size:12px;">'+ing+' '+r.ings[ing]+'g</div>';});
+    h+='</div></div>';
+  });
+  document.getElementById('panel-cookie').innerHTML=h;
+}
 /* ── INIT ── */
-buildPriceGrid();calcAndRender();renderSavedChips();loadEmps();renderAnnualTable();loadRoastery();
+buildPriceGrid();calcAndRender();renderSavedChips();loadEmps();renderAnnualTable();loadRoastery();renderCookiePanel();
 </script>
 </body>
 </html>
