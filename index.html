@@ -845,7 +845,7 @@ function renderMonthDetail(){
 var PREV_RATES={'노혜빈':10500,'김하은':10500,'이고은':10700,'진예빈':10700,'김건혜':13000,'박서현':10500,'허고운':10500};
 var DEFAULT_EMPS=[{name:'박서현',rate:10500},{name:'허고운',rate:10500},{name:'김하은',rate:10500},{name:'이고은',rate:10700},{name:'진예빈',rate:10700}];
 var empCount=0,modes={noh:'paste',sister:'paste'},parsedHours={noh:null,sister:null},empParsedHours={};
-var annualData={employees:{'전유진':[2251650,2251650,2244440,2244440,null,null,null,null,null,null,null,null],'노혜빈':[1489768,1571362,1276295,1667205,null,null,null,null,null,null,null,null],'김건혜':[348120,360000,312000,300000,null,null,null,null,null,null,null,null],'김하은':[0,133687,223377,208147,null,null,null,null,null,null,null,null],'이고은':[0,0,0,289713,null,null,null,null,null,null,null,null],'진예빈':[0,0,0,118989,null,null,null,null,null,null,null,null]}};
+var annualData={employees:{'전유진':[2251650,2251650,2244440,2244440,null,null,null,null,null,null,null,null],'노혜빈':[1489768,1571362,1276295,1157499,null,null,null,null,null,null,null,null],'김건혜':[348120,360000,312000,403000,null,null,null,null,null,null,null,null],'김하은':[0,133687,223377,172610,null,null,null,null,null,null,null,null],'이고은':[0,0,0,612192,null,null,null,null,null,null,null,null],'진예빈':[0,0,0,807058,null,null,null,null,null,null,null,null],'박서현':[0,0,0,55844,null,null,null,null,null,null,null,null],'허고운':[0,0,0,0,null,null,null,null,null,null,null,null]}};
 
 function setMode(who,mode){
   modes[who]=mode;
@@ -856,29 +856,40 @@ function setMode(who,mode){
 
 function parseTimeText(text){
   var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean),entries=[],declaredTotal=null,pendingDate=null;
-  function pickDate(s){
+  function pickDateInline(s){
     var k=s.match(/(\d{1,2})\s*\uC6D4\s*(\d{1,2})\s*\uC77C/);
     if(k) return k[1]+'/'+k[2];
-    var sl=s.match(/(\d{1,2})\/(\d{1,2})/);
+    var sl=s.match(/(\d{1,2})[\/\.](\d{1,2})/);
+    if(sl) return sl[1]+'/'+sl[2];
+    return null;
+  }
+  function pickDateOnly(s){
+    var k=s.match(/^(\d{1,2})\s*\uC6D4\s*(\d{1,2})\s*\uC77C/);
+    if(k) return k[1]+'/'+k[2];
+    var sl=s.match(/^(\d{1,2})\/(\d{1,2})/);
     if(sl) return sl[1]+'/'+sl[2];
     return null;
   }
   for(var i=0;i<lines.length;i++){
     var line=lines[i];
-    var tm=line.match(/\uCD1D\s*\uADFC\uBB34\uC2DC\uAC04[:\uFF1A]?\s*([\d.]+)\s*\uC2DC\uAC04(?:\s*([\d]+)\s*\uBD84)?/);
+    var tm=line.match(/^\uCD1D\s*(?:\uADFC\uBB34\uC2DC\uAC04[:\uFF1A]?\s*)?([\d.]+)\s*\uC2DC\uAC04(?:\s*([\d]+)\s*\uBD84)?/);
     if(tm){declaredTotal=parseFloat(tm[1])+(parseInt(tm[2]||'0'))/60;continue;}
     var tr=line.match(/(\d{1,2}):(\d{2})\s*[-~]\s*(\d{1,2}):(\d{2})/);
     if(tr){
-      var date=pickDate(line)||pendingDate;
+      var date=pickDateInline(line)||pendingDate;
       if(date){
         var s=parseInt(tr[1])*60+parseInt(tr[2]),e=parseInt(tr[3])*60+parseInt(tr[4]);
-        if(e<s)e+=1440;
-        entries.push({date:date,time:tr[1]+':'+tr[2]+'~'+tr[3]+':'+tr[4],hours:(e-s)/60});
+        var afterTime=line.substring(line.indexOf(tr[0])+tr[0].length);
+        var hr=afterTime.match(/(\d+(?:\.\d+)?)\s*\uC2DC\uAC04(?:\s*(\d+)\s*\uBD84)?/);
+        var hours;
+        if(hr){hours=parseFloat(hr[1])+(parseInt(hr[2]||'0'))/60;}
+        else {if(e<s){if(e<12*60 && e+12*60>s) e+=12*60;else e+=1440;}hours=(e-s)/60;}
+        entries.push({date:date,time:tr[1]+':'+tr[2]+'~'+tr[3]+':'+tr[4],hours:hours});
         pendingDate=null;
       }
       continue;
     }
-    var d=pickDate(line);
+    var d=pickDateOnly(line);
     if(d){pendingDate=d;continue;}
   }
   var calcTotal=entries.reduce(function(s,e){return s+e.hours;},0);
