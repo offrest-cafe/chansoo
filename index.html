@@ -855,16 +855,35 @@ function setMode(who,mode){
 }
 
 function parseTimeText(text){
-  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean),entries=[],declaredTotal=null;
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean),entries=[],declaredTotal=null,pendingDate=null;
+  function pickDate(s){
+    var k=s.match(/(\d{1,2})\s*\uC6D4\s*(\d{1,2})\s*\uC77C/);
+    if(k) return k[1]+'/'+k[2];
+    var sl=s.match(/(\d{1,2})\/(\d{1,2})/);
+    if(sl) return sl[1]+'/'+sl[2];
+    return null;
+  }
   for(var i=0;i<lines.length;i++){
     var line=lines[i];
-    var tm=line.match(/총\s*근무시간[:：]?\s*([\d.]+)\s*시간(?:\s*([\d]+)\s*분)?/);
+    var tm=line.match(/\uCD1D\s*\uADFC\uBB34\uC2DC\uAC04[:\uFF1A]?\s*([\d.]+)\s*\uC2DC\uAC04(?:\s*([\d]+)\s*\uBD84)?/);
     if(tm){declaredTotal=parseFloat(tm[1])+(parseInt(tm[2]||'0'))/60;continue;}
-    var m=line.match(/(\d{1,2})\/(\d{1,2}).*?(\d{1,2}):(\d{2})\s*[-~]\s*(\d{1,2}):(\d{2})/);
-    if(m){var s=parseInt(m[3])*60+parseInt(m[4]),e=parseInt(m[5])*60+parseInt(m[6]);if(e<s)e+=1440;entries.push({date:m[1]+'/'+m[2],time:m[3]+':'+m[4]+'~'+m[5]+':'+m[6],hours:(e-s)/60});}
+    var tr=line.match(/(\d{1,2}):(\d{2})\s*[-~]\s*(\d{1,2}):(\d{2})/);
+    if(tr){
+      var date=pickDate(line)||pendingDate;
+      if(date){
+        var s=parseInt(tr[1])*60+parseInt(tr[2]),e=parseInt(tr[3])*60+parseInt(tr[4]);
+        if(e<s)e+=1440;
+        entries.push({date:date,time:tr[1]+':'+tr[2]+'~'+tr[3]+':'+tr[4],hours:(e-s)/60});
+        pendingDate=null;
+      }
+      continue;
+    }
+    var d=pickDate(line);
+    if(d){pendingDate=d;continue;}
   }
-  var calc=entries.reduce(function(s,e){return s+e.hours;},0);
-  return {entries:entries,calcTotal:calc,declaredTotal:declaredTotal,finalTotal:declaredTotal!==null?declaredTotal:calc};
+  var calcTotal=entries.reduce(function(s,e){return s+e.hours;},0);
+  var finalTotal=declaredTotal!==null?declaredTotal:calcTotal;
+  return {entries:entries,calcTotal:calcTotal,declaredTotal:declaredTotal,finalTotal:finalTotal};
 }
 
 function parseRecord(who){
